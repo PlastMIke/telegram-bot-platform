@@ -37,7 +37,7 @@ func AuthMiddleware(config *config.Config) gin.HandlerFunc {
 		tokenString := parts[1]
 
 		// Валидируем токен
-		claims, err := jwt.ValidateToken(cfg.JWTSecret, tokenString)
+		claims, err := jwt.ValidateToken(config.JWTSecret, tokenString)
 		if err != nil {
 			// Если токен невалидный — возвращаем 401
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
