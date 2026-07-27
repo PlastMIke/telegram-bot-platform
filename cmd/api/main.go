@@ -9,7 +9,8 @@ import (
 	"syscall"   // Для сигналов (SIGINT, SIGTERM)
 	"time"      // Для таймаутов
 
-	"gorm.io/driver/postgres" // Драйвер PostgreSQL для GORM
+	"github.com/joho/godotenv" // Для загрузки переменных окружения
+	"gorm.io/driver/postgres"  // Драйвер PostgreSQL для GORM
 	"gorm.io/gorm"
 
 	"github.com/PlastMIke/telegram-bot-platform/internal/api"
@@ -17,6 +18,10 @@ import (
 )
 
 func main() {
+	// Загружаем .env файл
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system environment variables")
+	}
 	// Загружаем конфигурацию из переменных окружения
 	config := config.LoadConfig()
 
