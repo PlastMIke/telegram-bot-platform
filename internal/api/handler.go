@@ -58,8 +58,8 @@ func (h *Handler) Register(c *gin.Context) {
 
 	// Создаём пользователя с паролем
 	user := models.User{
-		Email:        req.Email,
-		PasswordHash: string(hashedPassword), // Преобразуем []byte в string
+		Email:    req.Email,
+		Password: string(hashedPassword), // Преобразуем []byte в string
 	}
 
 	// Сохраняем в БД
@@ -93,7 +93,7 @@ func (h *Handler) Login(c *gin.Context) {
 
 	// Проверяем пароль
 	// bcrypt.CompareHashAndPassword сравнивает хеш с паролем
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error:": "invalid password"})
 		return
 	}

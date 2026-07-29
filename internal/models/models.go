@@ -16,7 +16,8 @@ type User struct {
 	Email string `gorm:"uniqueIndex; not null" json:"email"`
 
 	// Пароль хранится в виде хэша, поэтому не сохраняем его в JSON (никогда не храним в открытом виде!)
-	PasswordHash string `gorm:"not null" json:"-"` // json:"-" означает, что поле не будет сериализоваться в JSON
+	// ЯВНО указываем имя колонки "password", чтобы GORM не придумывал "password_hash"
+	Password string `gorm:"column:password; not null" json:"-"` // json:"-" означает, что поле не будет сериализоваться в JSON
 
 	// CreatedAt и UpdatedAt GORM заполняет автоматически
 	CreatedAt time.Time `json:"created_at"`
