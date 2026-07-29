@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: bot_platform_db
+    environment:
+      POSTGRES_USER: botuser
+      POSTGRES_PASSWORD: Slayer69
+      POSTGRES_DB: botdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U botuser -d botdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: bot_platform_redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redis_data:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: bot_platform_nats
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: bot_platform_api
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DATABASE_URL=postgres://botuser:botpass@postgres:5432/botdb?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - NATS_URL=nats://nats:4222
+      - JWT_SECRET=your-super-secret-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: bot_platform_worker
+    environment:
+      - DATABASE_URL=postgres://botuser:botpass@postgres:5432/botdb?sslmode=disable
+      - NATS_URL=nats://nats:4222
+      - JWT_SECRET=your-super-secret-key
+    depends_on:
+      - nats
+      - postgres
+
+  outbox-publisher:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.outbox-publisher
+    container_name: bot_platform_outbox_publisher
+    environment:
+      - DATABASE_URL=postgres://botuser:botpass@postgres:5432/botdb?sslmode=disable
+      - NATS_URL=nats://nats:4222
+    depends_on:
+      - nats
+      - postgres
+
+volumes:
+  postgres_data:
+  redis_data:
