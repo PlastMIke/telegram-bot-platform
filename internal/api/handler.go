@@ -112,7 +112,7 @@ func (h *Handler) Login(c *gin.Context) {
 // CreateBot обрабатывает POST /bots (требует аутентификации)
 func (h *Handler) CreateBot(c *gin.Context) {
 	// Получаем userID из контекста (установлен в AuthMiddleware)
-	userID, exists := c.Get("UserID")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
 		return

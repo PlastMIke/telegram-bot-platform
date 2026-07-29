@@ -2,7 +2,9 @@ package jwt
 
 import (
 	"errors" // Для создания кастомных ошибок
-	"time"   // Для работы с временем (expiration токена)
+	"fmt"
+	"strings" // Для очистки токена от пробелов
+	"time"    // Для работы с временем (expiration токена)
 
 	"github.com/golang-jwt/jwt/v5" // Библиотека для работы с JWT
 )
@@ -50,29 +52,35 @@ func GenerateToken(secretKey string, userID uint) (string, error) {
 // ValidateToken проверяет валидность JWT токена и возвращает данные из него
 // Возвращает Claims (с userID) или ошибку
 func ValidateToken(secretKey, tokenString string) (*Claims, error) {
+	// Защита от случайных пробелов и переносов строк при копировании из терминала
+	tokenString = strings.TrimSpace(tokenString)
+
+	claims := &Claims{}
+
 	// Парсим токен с функцией проверки подписи
 	token, err := jwt.ParseWithClaims(
 		tokenString,
-		&Claims{},
+		claims,
 		// Функция, которая возвращает ключ для проверки подписи
 		func(token *jwt.Token) (interface{}, error) {
 			// Проверяем, что метод подписи — HS256 (защита от атак)
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("unexpected signing method")
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
 			// Возвращаем секретный ключ для проверки подписи
 			return []byte(secretKey), nil
 		},
 	)
-
+	// Если библиотека jwt нашла проблему (например, не совпадает подпись)
 	if err != nil {
-		// Если токен невалидный (истёк, повреждён, неправильная подпись)
-		return nil, err
+		// Оборачиваем ошибку, чтобы точно знать причину (signature is invalid, expired и т.д.)
+		return nil, fmt.Errorf("jwt parse error: %w", err)
 	}
 
 	// Извлекаем claims из токена
-	if claims, ok := token.Claims.(*Claims); !ok && token.Valid {
-		return claims, nil
+	if !token.Valid {
+		return nil, errors.New("token parsed but marked as invalid")
 	}
-	return nil, errors.New("invalid token")
+
+	return claims, nil
 }

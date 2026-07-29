@@ -21,6 +21,8 @@ func main() {
 	// Загружаем .env файл
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
+	} else {
+		log.Println("✅ .env file loaded successfully")
 	}
 	// Загружаем конфигурацию из переменных окружения
 	config := config.LoadConfig()

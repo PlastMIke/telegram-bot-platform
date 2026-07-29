@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/http" // Для HTTP статусов
 	"strings"  // Для работы со строками (разделение "Bearer <token>")
 
@@ -39,6 +40,8 @@ func AuthMiddleware(config *config.Config) gin.HandlerFunc {
 		// Валидируем токен
 		claims, err := jwt.ValidateToken(config.JWTSecret, tokenString)
 		if err != nil {
+			// Логируем ошибку, чтобы видеть, если ключи не совпадают
+			log.Printf("❌ JWT Validation Error: %v | Secret length used: %d", err, len(config.JWTSecret))
 			// Если токен невалидный — возвращаем 401
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
 			c.Abort()
