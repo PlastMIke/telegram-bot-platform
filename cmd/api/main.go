@@ -1,5 +1,6 @@
 package main
 
+// MVP
 import (
 	"context"   // Для graceful shutdown
 	"log"       // Для логирования
