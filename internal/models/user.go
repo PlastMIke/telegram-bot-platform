@@ -14,6 +14,10 @@ type User struct {
 	// HasMany: один пользователь → много ботов.
 	// GORM создаст foreign key user_id в таблице bots.
 	Bots []Bot `gorm:"foreignKey:UserID" json:"bots,omitempty"`
+	// ⚠️ ВНИМАНИЕ: это создаёт N+1 проблему при загрузке.
+	// Если загрузить 100 пользователей, GORM сделает 101 запрос
+	// (1 на пользователей + 100 на ботов каждого).
+	// Решение: Preload("Bots") или явный JOIN.
 }
 
 func (User) TableName() string {

@@ -87,6 +87,6 @@ func (p *Publisher) publishEvent(ctx context.Context, event repository.OutboxEve
 	// js, _ := p.natsConn.JetStream()
 	// js.Publish(event.EventType, []byte(event.Payload))
 
-	_, err := p.natsConn.Publish(event.EventType, []byte(event.Payload))
+	err := p.natsConn.Publish(event.EventType, []byte(event.Payload))
 	return err
 }

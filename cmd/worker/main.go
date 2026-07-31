@@ -22,11 +22,13 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// 2. Подключаемся к БД
+	// 2. Инициализируем БД (подключение для валидации конфигурации и миграций при необходимости)
 	db, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %v", err)
 	}
+	_ = db // соединение не используется напрямую в текущей реализации
+	
 	log.Println("✅ Worker connected to Database")
 
 	// 3. Подключаемся к NATS

@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	// viper — библиотека для управления конфигурацией.
+	// Автор: Steve Francia (spf13), он же автор Hugo и Cobra.
+	// Поддерживает: env vars, YAML, JSON, TOML, remote config (etcd, Consul).
 )
 
 // Config — production-grade конфигурация с валидацией и типизацией.
@@ -17,7 +20,7 @@ type Config struct {
 	// Server
 	Port        int    `mapstructure:"PORT"`
 	Environment string `mapstructure:"ENVIRONMENT"` // development | staging | production
-	LogLevel    string `mapstructure:"LOG_LEVEL"`   // debug | info | warn | error
+	LogLevel    string `mapstructure:"LOG_LEVEL"`   // debug < info < warn < error
 
 	// Database
 	DatabaseURL       string        `mapstructure:"DATABASE_URL"`
@@ -75,6 +78,11 @@ func LoadConfig() (*Config, error) {
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+		// Unmarshal преобразует map[string]interface{} → Config.
+		// Использует теги mapstructure для маппинга.
+		//
+		// %w в fmt.Errorf — "wrapping" ошибки.
+		// Позволяет вызывающему коду проверить: errors.Is(err, specificError)
 	}
 
 	// Валидируем обязательные поля
@@ -83,12 +91,15 @@ func LoadConfig() (*Config, error) {
 	}
 
 	return &cfg, nil
+	// Валидация ОТДЕЛЬНА от загрузки.
+	// Это позволяет протестировать загрузку и валидацию независимо.
 }
 
 func setDefaults(v *viper.Viper) {
 	// Server
 	v.SetDefault("PORT", 8080)
 	v.SetDefault("ENVIRONMENT", "development")
+	// По умолчанию development. В production ОБЯЗАТЕЛЬНО задавать явно.
 	v.SetDefault("LOG_LEVEL", "info")
 
 	// Database
@@ -109,6 +120,8 @@ func setDefaults(v *viper.Viper) {
 
 	// JWT
 	v.SetDefault("JWT_EXPIRATION", 24*time.Hour)
+	// JWT_SECRET НЕ ИМЕЕТ ДЕФОЛТА. Это намеренно.
+	// Если его не задать — validate() вернёт ошибку.
 
 	// Worker
 	v.SetDefault("WORKER_CONCURRENCY", 10)
@@ -123,6 +136,8 @@ func validate(cfg *Config) error {
 	// Валидация обязательных полей
 	if cfg.JWTSecret == "" {
 		return fmt.Errorf("JWT_SECRET is required")
+		// JWT_SECRET без значения = катастрофа.
+		// Все токены будут подписаны пустым ключом = любой может подделать токен.
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -140,14 +155,20 @@ func validate(cfg *Config) error {
 	// Валидация значений
 	if cfg.Port < 1 || cfg.Port > 65535 {
 		return fmt.Errorf("PORT must be between 1 and 65535")
+		// TCP-порт — 16-битное число: 0-65535.
+		// 0 — специальный (OS выбирает свободный порт).
+		// 1-1023 — привилегированные (требуют root).
 	}
 
 	if cfg.DBMaxConns < cfg.DBMinConns {
 		return fmt.Errorf("DB_MAX_CONNS must be >= DB_MIN_CONNS")
+		// Логическая проверка: max не может быть меньше min.
+		// Без этой проверки pool будет вести себя непредсказуемо.
 	}
 
 	if cfg.WorkerConcurrency < 1 {
 		return fmt.Errorf("WORKER_CONCURRENCY must be >= 1")
+		// 0 горутин = сообщения не обрабатываются.
 	}
 
 	return nil
