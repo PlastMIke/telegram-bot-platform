@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -56,13 +57,13 @@ func main() {
 
 	// 6. Создаём HTTP-сервер
 	srv := &http.Server{
-		Addr:    ":" + cfg.Port,
+		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: router,
 	}
 
 	// 7. Запускаем сервер в горутине
 	go func() {
-		log.Printf("🚀 API Gateway starting on port %s", cfg.Port)
+		log.Printf("🚀 API Gateway starting on port %d", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start server: %v", err)
 		}
